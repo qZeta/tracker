@@ -99,6 +99,8 @@ track = async (list, client) => {
         await client.channels.cache.get(process.env.REFRESH).send(`Refreshing display... ${time}`);
         await deleteOld(client);
         await display(list, client);
+        if(!(hr % 2) && min <= 5)
+            await displayMaps(client);
     }
 
     setTimeout(track, 1000*60, list, client);
@@ -130,6 +132,14 @@ getWS = async (ign) => {
     if(response.success === false)
         return [false, false, false, false, false];
     return [response.overall_winstreak, response.eight_one_winstreak, response.eight_two_winstreak, response.four_three_winstreak, response.four_four_winstreak];
+}
+
+getMaps = async () => {
+    const promise = await fetch(process.env.MAP_API + process.env.AS_KEY);
+    const response = await promise.json();
+    if(!response.success)
+        return false;
+    return response;
 }
 
 deleteOld = async (client) => {
@@ -209,10 +219,10 @@ display = async (list, client) => {
         const mkdrgain = ratio(now.kills_bedwars, now.deaths_bedwars) - ratio(player.monthly.kills_bedwars, player.monthly.deaths_bedwars);
         const mbblrgain = ratio(now.beds_broken_bedwars, now.beds_lost_bedwars) - ratio(player.monthly.beds_broken_bedwars, player.monthly.beds_lost_bedwars);
         monthlymsg.edit(`**${player.ign}:**  \`+${xpToStar(monthlyxp)}✫\`
-        \`${monthlyfk} FK, ${monthlyfd} FD, ${round(ratio(monthlyfk, monthlyfd), 2)} FKDR (${sign(round(mfkdrgain, 4))})\`
-        \`${monthlywin} W,  ${monthlyloss} L,  ${round(ratio(monthlywin, monthlyloss), 2)} WLR  (${sign(round(mwlrgain, 4))})\`
-        \`${monthlykill} K,  ${monthlydeath} D,  ${round(ratio(monthlykill, monthlydeath), 2)} KDR  (${sign(round(mkdrgain, 4))})\`
-        \`${monthlybb} BB, ${monthlybl} BL, ${round(ratio(monthlybb, monthlybl), 2)} BBLR (${sign(round(mbblrgain, 4))})\``);
+        \`${monthlyfk} FK, ${monthlyfd} FD, ${round(ratio(monthlyfk, monthlyfd), 2)} FKDR (${sign(round(mfkdrgain, 3))})\`
+        \`${monthlywin} W,  ${monthlyloss} L,  ${round(ratio(monthlywin, monthlyloss), 2)} WLR  (${sign(round(mwlrgain, 3))})\`
+        \`${monthlykill} K,  ${monthlydeath} D,  ${round(ratio(monthlykill, monthlydeath), 2)} KDR  (${sign(round(mkdrgain, 3))})\`
+        \`${monthlybb} BB, ${monthlybl} BL, ${round(ratio(monthlybb, monthlybl), 2)} BBLR (${sign(round(mbblrgain, 3))})\``);
 
         const yearlymsg = await client.channels.cache.get(process.env.YEARLY).send(list.indexOf(player).toString());
         const yearlyfk = now.final_kills_bedwars - player.yearly.final_kills_bedwars;
@@ -229,10 +239,10 @@ display = async (list, client) => {
         const ykdrgain = ratio(now.kills_bedwars, now.deaths_bedwars) - ratio(player.yearly.kills_bedwars, player.yearly.deaths_bedwars);
         const ybblrgain = ratio(now.beds_broken_bedwars, now.beds_lost_bedwars) - ratio(player.yearly.beds_broken_bedwars, player.yearly.beds_lost_bedwars);
         yearlymsg.edit(`**${player.ign}:**  \`+${xpToStar(yearlyxp)}✫\`
-        \`${yearlyfk} FK, ${yearlyfd} FD, ${round(ratio(yearlyfk, yearlyfd), 2)} FKDR (${sign(round(yfkdrgain, 4))})\`
-        \`${yearlywin} W,  ${yearlyloss} L,  ${round(ratio(yearlywin, yearlyloss), 2)} WLR  (${sign(round(ywlrgain, 4))})\`
-        \`${yearlykill} K,  ${yearlydeath} D,  ${round(ratio(yearlykill, yearlydeath), 2)} KDR  (${sign(round(ykdrgain, 4))})\`
-        \`${yearlybb} BB, ${yearlybl} BL, ${round(ratio(yearlybb, yearlybl), 2)} BBLR (${sign(round(ybblrgain, 4))})\``);
+        \`${yearlyfk} FK, ${yearlyfd} FD, ${round(ratio(yearlyfk, yearlyfd), 2)} FKDR (${sign(round(yfkdrgain, 2))})\`
+        \`${yearlywin} W,  ${yearlyloss} L,  ${round(ratio(yearlywin, yearlyloss), 2)} WLR  (${sign(round(ywlrgain, 2))})\`
+        \`${yearlykill} K,  ${yearlydeath} D,  ${round(ratio(yearlykill, yearlydeath), 2)} KDR  (${sign(round(ykdrgain, 2))})\`
+        \`${yearlybb} BB, ${yearlybl} BL, ${round(ratio(yearlybb, yearlybl), 2)} BBLR (${sign(round(ybblrgain, 2))})\``);
 
         const wsmsg = await client.channels.cache.get(process.env.WS).send(list.indexOf(player).toString());
         const ws = await getWS(player.ign);
@@ -241,11 +251,52 @@ display = async (list, client) => {
     }
 
     const time = new Date();
-    await client.channels.cache.get(process.env.DAILY).send(`Last updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
-    await client.channels.cache.get(process.env.WEEKLY).send(`Last updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
-    await client.channels.cache.get(process.env.MONTHLY).send(`Last updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
-    await client.channels.cache.get(process.env.YEARLY).send(`Last updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
-    await client.channels.cache.get(process.env.WS).send(`Last updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+    await client.channels.cache.get(process.env.DAILY).send(`\nLast updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+    await client.channels.cache.get(process.env.WEEKLY).send(`\nLast updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+    await client.channels.cache.get(process.env.MONTHLY).send(`\nLast updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+    await client.channels.cache.get(process.env.YEARLY).send(`\nLast updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+    await client.channels.cache.get(process.env.WS).send(`\nLast updated <t:${Math.floor(time.getTime() / 1000)}:R>`);
+}
+
+displayMaps = async (client) => {
+    const maps = await getMaps();
+    const map4s = [];
+    for(const map of maps.pools.BEDWARS_4TEAMS_FAST)
+        map4s.push(map);
+    for(const map of maps.pools.BEDWARS_4TEAMS_SLOW)
+        map4s.push(map);
+    sortMap(map4s);
+
+    const mapmsg = await client.channels.cache.get(process.env.MAPS).send('deleting...');
+    const mapfetched = await mapmsg.channel.messages.fetch({ limit: 99 });
+    mapmsg.channel.bulkDelete(mapfetched);
+
+    for(const map of map4s) {
+        if(map.maxBuild < 0) {
+            await client.channels.cache.get(process.env.MAPS).send(`**${map.name}** - Build Height: \`Unknown\``);
+            continue;
+        }
+        await client.channels.cache.get(process.env.MAPS).send(`**${map.name}** - Build Height: \`${map.maxBuild}\``);
+    }
+    await client.channels.cache.get(process.env.MAPS).send(`
+    Last Rotation: <t:${Math.floor(maps.date)}:D>`);
+}
+
+sortMap = (maplist) => {
+    for(n = maplist.length; n > 0; n--) {
+        let swap = true;
+        while(swap) {
+            swap = false;
+            for(i = 1; i < n; i++) {
+                if(maplist[i-1].name > maplist[i].name) {
+                    const temp = maplist[i];
+                    maplist[i] = maplist[i-1];
+                    maplist[i-1] = temp;
+                    swap = true;
+                }
+            }
+        }
+    }
 }
 
 xpToStar = (xp) => {
